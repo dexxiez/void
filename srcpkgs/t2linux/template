@@ -1,0 +1,17 @@
+# Template file for 't2linux'
+pkgname=t2linux
+version=1.0.0
+revision=1
+build_style=meta
+short_desc="Meta package for Apple T2 machine support on Void Linux"
+maintainer="Dexxiez <toby@boulton.net.au>"
+license="GPL-2.0-only"
+homepage="https://t2linux.org"
+
+# Add all the dependencies your T2 machines might need
+depends="
+ t2linux6.13
+ linux-firmware
+"
+
+# This is a meta package, so there's no need for additional configuration
