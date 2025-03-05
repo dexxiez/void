@@ -1,0 +1,19 @@
+# Template file for 'nxplorer'
+pkgname=nxplorer
+version=1.2.5
+revision=1
+build_style=cargo
+hostmakedepends="pkg-config"
+depends="nerd-fonts-symbols-ttf"
+short_desc="nx explorer for nx monorepos"
+maintainer="Dexxiez <toby@boulton.net.au>"
+license="MIT"
+nocross=yes
+homepage="https://github.com/dexxiez"
+changelog="https://github.com/dexxiez/nxplorer/releases"
+distfiles="https://github.com/dexxiez/nxplorer/archive/refs/tags/v${version}.tar.gz"
+checksum=d25c4ae4cc70b31dad63b6856f83a3a1103279956f35ac7690acf80d569d29d7
+
+do_install() {
+	vbin target/${RUST_TARGET}/release/nxplorer
+}
