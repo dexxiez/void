@@ -1,0 +1,18 @@
+services:
+  void-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    privileged: true
+    volumes:
+      - ./:/custom-repo
+      - void-cache:/void-packages/hostdir
+    environment:
+      - ARCH=x86_64
+    tty: true
+    stdin_open: true
+
+volumes:
+  void-cache:
+    name: void-build-cache

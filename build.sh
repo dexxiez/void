@@ -1,59 +1,47 @@
 #!/bin/bash
+# Script to set up and build packages inside the Void Linux container
 
-export XBPS_ALLOW_CHROOT_BREAKOUT=1
+# Switch to repo-ci mirror for faster downloads
+mkdir -p /etc/xbps.d && cp /usr/share/xbps.d/*-repository-*.conf /etc/xbps.d/
+sed -i 's|repo-default|repo-ci|g' /etc/xbps.d/*-repository-*.conf
 
-set -e
+# Install dependencies
+xbps-install -Syu xbps && xbps-install -yu && xbps-install -y sudo bash curl git xtools 
 
-# Configuration
-VOID_PACKAGES_DIR="$HOME/void-packages"  # Path to void-packages
-REPO_DIR="$PWD/binpkgs"               # Output repository directory
-HOSTDIR="$VOID_PACKAGES_DIR/hostdir"
-PACKAGES=("t2linux6.13" "t2linux")       # All packages to build
-
-# Make sure void-packages exists
-if [ ! -d "$VOID_PACKAGES_DIR" ]; then
-    echo "Error: void-packages directory not found at $VOID_PACKAGES_DIR"
-    echo "Please clone it with: git clone https://github.com/void-linux/void-packages.git"
-    exit 1
+# Create non-root user for building
+if ! id builder &>/dev/null; then
+  useradd -G xbuilder -m builder
 fi
 
-echo "Creating symlinks for subpackages..."
-cd "$VOID_PACKAGES_DIR/srcpkgs"
-ln -sf t2linux6.13 t2linux6.13-headers
-cd - > /dev/null
+# Set up build environment
+cd /build
+chown -R builder:builder .
 
-# Make sure the bootstrap has been run
-if [ ! -d "$HOSTDIR/binpkgs" ]; then
-    echo "Running bootstrap in void-packages..."
-    (cd "$VOID_PACKAGES_DIR" && ./xbps-src binary-bootstrap)
+# Determine which package to build
+if [ -z "$1" ]; then
+  echo "Usage: $0 <package_name>"
+  echo "Available packages:"
+  find ./srcpkgs -maxdepth 1 -type d | grep -v "^./srcpkgs$" | sort | xargs -n1 basename
+  exit 1
 fi
 
-# Copy our package templates to void-packages
-echo "Copying package templates to void-packages..."
-for pkg in "${PACKAGES[@]}"; do
-    echo "- Copying $pkg"
-    mkdir -p "$VOID_PACKAGES_DIR/srcpkgs/$pkg"
-    cp -r "srcpkgs/$pkg"/* "$VOID_PACKAGES_DIR/srcpkgs/$pkg/"
-done
+PKG_NAME="$1"
+if [ ! -d "./srcpkgs/$PKG_NAME" ]; then
+  echo "Error: Package $PKG_NAME not found in srcpkgs directory"
+  exit 1
+fi
 
-# Build each package
-for pkg in "${PACKAGES[@]}"; do
-    echo "Building package: $pkg"
-    (cd "$VOID_PACKAGES_DIR" && ./xbps-src pkg "$pkg")
-done
+# Build the package
+echo "Building package: $PKG_NAME"
+cd /build
+sudo -Eu builder xbps-src -m masterdir pkg "$PKG_NAME"
 
-# Create repository directory
-mkdir -p "$REPO_DIR"
+# Copy built packages to output directory
+mkdir -p /build/binpkgs
+cp -rvf /build/masterdir/hostdir/binpkgs/* /build/binpkgs/
 
-# Copy all built packages to our repository
-echo "Copying built packages to repository..."
-for pkg in "${PACKAGES[@]}"; do
-    cp -f "$HOSTDIR"/binpkgs/"$pkg"*.xbps "$REPO_DIR"/ 2>/dev/null || true
-    cp -f "$HOSTDIR"/binpkgs/nonfree/"$pkg"*.xbps "$REPO_DIR"/ 2>/dev/null || true
-done
+# Generate repository data
+cd /build/binpkgs
+xbps-rindex -a *.xbps
 
-# Generate repository data (without signatures)
-echo "Generating repository index..."
-xbps-rindex -a "$REPO_DIR"/*.xbps
-
-echo "Repository created at $REPO_DIR"
+echo "Build complete! Packages are in the binpkgs directory"
