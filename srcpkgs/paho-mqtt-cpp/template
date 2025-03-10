@@ -1,0 +1,72 @@
+# Template file for 'paho-mqtt-cpp'
+pkgname=paho-mqtt-cpp
+version=1.5.1
+revision=1
+build_style=cmake
+configure_args="-DPAHO_WITH_SSL=ON -DPAHO_BUILD_SHARED=ON -DPAHO_BUILD_STATIC=ON -DCMAKE_CXX_STANDARD=17"
+hostmakedepends="cmake pkg-config"
+makedepends="openssl-devel paho-mqtt-c-devel"
+depends="paho-mqtt-c"
+short_desc="Eclipse Paho MQTT C++ client library"
+maintainer="Void Linux <maintainer@voidlinux.org>"
+license="EPL-2.0"
+homepage="https://github.com/eclipse/paho.mqtt.cpp"
+distfiles="https://github.com/eclipse/paho.mqtt.cpp/archive/v${version}.tar.gz"
+checksum=1deb281ca75b49f605d6018cec594771905ea3ba9632a072c329a5ac23fc8c97
+
+build_options="doc tests examples"
+desc_option_doc="Generate API documentation"
+desc_option_tests="Build and run tests"
+desc_option_examples="Build example programs"
+
+if [ "$build_option_doc" ]; then
+  hostmakedepends+=" doxygen graphviz"
+  configure_args+=" -DPAHO_BUILD_DOCUMENTATION=ON"
+fi
+
+if [ "$build_option_tests" ]; then
+  configure_args+=" -DPAHO_BUILD_TESTS=ON"
+  makedepends+=" catch2"
+fi
+
+if [ "$build_option_examples" ]; then
+  configure_args+=" -DPAHO_BUILD_EXAMPLES=ON"
+fi
+
+post_install() {
+  vlicense LICENSE
+}
+
+paho-mqtt-cpp-devel_package() {
+  depends="${sourcepkg}>=${version}_${revision} paho-mqtt-c-devel"
+  short_desc+=" - development files"
+  pkg_install() {
+    vmove usr/include
+    
+    # Handle lib or lib64 directories
+    if [ -d "${DESTDIR}/usr/lib64" ]; then
+      vmove usr/lib64/*.so
+      vmove usr/lib64/*.a
+      if [ -d "${DESTDIR}/usr/lib64/cmake" ]; then
+        vmove usr/lib64/cmake
+      fi
+    elif [ -d "${DESTDIR}/usr/lib" ]; then
+      vmove usr/lib/*.so
+      vmove usr/lib/*.a
+      if [ -d "${DESTDIR}/usr/lib/cmake" ]; then
+        vmove usr/lib/cmake
+      fi
+    fi
+    
+    # Handle pkgconfig if it exists
+    if [ -d "${DESTDIR}/usr/lib64/pkgconfig" ]; then
+      vmove usr/lib64/pkgconfig
+    elif [ -d "${DESTDIR}/usr/lib/pkgconfig" ]; then
+      vmove usr/lib/pkgconfig
+    fi
+    
+    if [ "$build_option_doc" ]; then
+      vmove usr/share/doc
+    fi
+  }
+}

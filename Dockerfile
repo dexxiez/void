@@ -6,7 +6,7 @@ RUN mkdir -p /etc/xbps.d && \
 	sed -i 's|repo-default|repo-ci|g' /etc/xbps.d/*-repository-*.conf && \
 	xbps-install -Syu xbps && \
 	xbps-install -yu && \
-	xbps-install -y sudo bash curl git xtools clang18 vim
+	xbps-install -y sudo bash curl git xtools gcc vim
 
 # Create builder user
 RUN useradd -G xbuilder -m builder && \
