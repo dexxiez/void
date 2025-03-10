@@ -69,6 +69,12 @@ After building your packages, the binpkgs directory will contain your packages a
 echo 'repository=/path/to/dex-xbps-repo/binpkgs/x86_64-repodata' > /etc/xbps.d/10-custom-repo.conf
 ```
 
+or
+
+```bash
+echo 'repository=/path/to/dex-xbps-repo/binpkgs/aarch64-repodata' > /etc/xbps.d/10-custom-repo.conf
+```
+
 ## Signing Packages
 
 To sign your packages:
